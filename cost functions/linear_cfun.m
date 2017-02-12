@@ -1,5 +1,5 @@
 %% An Example of a Linear Cost Function
-% Danile Wilhelm & Nicolas Cerkez
+% Daniel Wilhelm & Nicolas Cerkez
 % University College London, 2017
 
 function [c] = linear_cfun(S, N)
