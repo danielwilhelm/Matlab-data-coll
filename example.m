@@ -22,7 +22,7 @@ X = reshape(X, 100, 10);
 % We assume that the cost function takes the following linear form: 
 % c = n*S, where n = # of observations and S = a vector of indices indicating 
 % what covariates of X should be included (price is normalized to 1). 
-% This could easily be done by writing c = @(S, N) N*abs(S), however, since
+% This could easily be done by writing c = @(S, N) N*sum(S), however, since
 % we wrote a function called linear_cfun with exactly this function, we here
 % call this functino instead.
 c = @linear_cfun;
