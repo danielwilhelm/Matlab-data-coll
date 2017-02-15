@@ -1,1 +1,0 @@
-% cost function for clustered RCT
