@@ -9,8 +9,8 @@ close
 
 %% Simulating Data
 % In order to be able to use the OGA algorithm, we need (at least) an outcome
-% variable (Y), a matrix (X) of regressors, a cost function (c), and a budget
-% constraint (B). 
+% variable (Y), a matrix (X) of regressors, a cost function (c), a budget
+% constraint (B), and a vector of possible sample sizes (n). 
 
 % Simluate data for Y (Nx1 vector: N observations of the outcome)
 Y = randperm(1000000, 100)';
@@ -20,30 +20,38 @@ X = randperm(1000000, 100*10);
 X = reshape(X, 100, 10);
 
 % We assume that the cost function takes the following linear form: 
-% c = n*S, where n = # of observations and S = a vector of indices indicating 
-% what covariates of X should be included (price is normalized to 1). 
-% This could easily be done by writing c = @(S, N) N*sum(S), however, since
-% we wrote a function called linear_cfun with exactly this function, we here
-% call this functino instead.
 c = @linear_cfun;
+
+% We can also assume that the cost function takes "the general form" 
+d = @general_cfun;
+% for this cost function, we need to specify the following: 
+%M = 10;         % this cannot exceed length of S?!?!
+%tau = [1:M];
+%tau0 = 100;
+%phi = 1473;
+%alpha = 0.4;
+%ETA = 430;
 
 % Assume that the budget constraint is equal to 200
 B = 200;
 
-%% Using OGA to get coefficients of covariates to include
-%  Given that we are only looking at the OGA method here, one way to solve
-%  this problem is to directly use the OGA function. The OGA application
-%  uses the same input arguments as the covSelection function and gives the same
-%  output arguments (plus Ihat, which is a vector indexing which covariates
-%  to use):
-[Ihat, coeff, intercept] = OGA(Y, X, c, B);
+% Suppose we have three different sample sizes (they must be in ascending order)
+n = [40, 80, 100];
 
 %% Using covSelection to get coefficients of covariates to include
-%  We now use the covSelection function with four input arguments (Y, X, c, B)
-%  and expect two output arguments: 
+%  We now use the covSelection function with four input arguments (Y, X, c, B, n)
+%  and expect three output arguments: 
 %  1) coeff = coefficient of regressors to be included (without intercept)
 %  2) intercept = intercept of regression 
-[coeff2, intercept2] = covSelection(Y, X, c, B);
+%  3) ssize = the optimal sample size
+tic
+[coeff, intercept, ssize] = covSelection(Y, X, c, B, n);
+toc
 
-% The outputs of both, the OGA and the covSelection functions, are, of course, the same!
+disp('The coefficients of the covariates to be included are:') 
+celldisp(coeff)
+disp('The intercept of the regression is:')
+celldisp(intercept)
+disp('The desired sample size is:')
+celldisp(ssize)
 

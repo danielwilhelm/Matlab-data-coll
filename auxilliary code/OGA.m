@@ -2,12 +2,13 @@
 %  Daniel Wilhelm & Nicolas Cerkez
 %  University College London, 2017
 
-function [Ihat, coeff, intercept] = OGA(Y, X, c, B, varargin)
+function [Ihat, coeff, intercept] = OGA(Y, X, c, B, ss, varargin)
     % Create a function with the following input and output arguments: 
     % Inputs:   Y = outcome vector (Nx1)
     %           X = covariates matrix (Nxp)
     %           c = a cost function 
     %           B = the available budget
+    %           ss = sample size (1x1 matrix)
     %           varargin = other (optional) variables (see below)
     % Outputs:  Ihat = indicates indices (of covariates) to be included in reg
     %           coeff = coefficient of regression (without intercept)
@@ -19,12 +20,13 @@ function [Ihat, coeff, intercept] = OGA(Y, X, c, B, varargin)
 	iP.addRequired('X', @isnumeric);                    % Nxp matrix: N observations of M covariates
 	iP.addRequired('c', @(f) isa(f, 'function_handle'));% cost function for a given sample size n, i.e. c: {0,1}^M -> R
 	iP.addRequired('B', @isnumeric);                    % the available budget
-	iP.addParameter('maxIter', 1000, @isnumeric);       % max number of regressors to be selected
+	iP.addRequired('ss', @isnumeric);                   % the sample size
+    iP.addParameter('maxIter', 1000, @isnumeric);       % max number of regressors to be selected
 	iP.addParameter('includeReg', NaN, @isnumeric);     % Mx1 vector of zeros and ones, indicating (=1) regressors whose inclusion should be forced
 	iP.addParameter('excludeReg', NaN, @isnumeric);     % Mx1 vector of zeros and ones, indicating (=1) regressors whose inclusion should be prevented
 
-	iP.parse(Y, X, c, B, varargin{:});
-	Y = iP.Results.Y; X = iP.Results.X; c = iP.Results.c; B = iP.Results.B; maxIter = iP.Results.maxIter; includeReg = iP.Results.includeReg; excludeReg = iP.Results.excludeReg;
+	iP.parse(Y, X, c, B, ss, varargin{:});
+	Y = iP.Results.Y; X = iP.Results.X; c = iP.Results.c; B = iP.Results.B; ss=iP.Results.ss; maxIter = iP.Results.maxIter; includeReg = iP.Results.includeReg; excludeReg = iP.Results.excludeReg;
 
 	if (~isnan(includeReg) & (length(includeReg)~=size(X,2)))
 		error('OGA: includeReg of incorrect dimension!')
@@ -56,7 +58,7 @@ function [Ihat, coeff, intercept] = OGA(Y, X, c, B, varargin)
     intercept = 0;                      % define intercept
 
     % check whether budget constraint is satisfied when no covariates are selected
-    if (c(S, N)<=B)                     % evaluate cost function with all covariates indicated by S (in this case either none or with covariates where inlcudeReg==1), if less than B
+    if (c(S, ss)<=B)                     % evaluate cost function with all covariates indicated by S (in this case either none or with covariates where inlcudeReg==1), if less than B
     	coeff = zeros(M,1);             % define coeff as a (Mx1) vector
     	intercept = mean(Y);            % define intercept = mean of Y (outcome) (since no covariates included in this case)
     else
@@ -83,7 +85,7 @@ function [Ihat, coeff, intercept] = OGA(Y, X, c, B, varargin)
 		% check budget constraint
 		Snew = S;                           % define Snew = S
 		Snew(I) = 1;                        % indicate the position of this new covariate to be included
-		if (c(Snew, N)<=B)                  % evaluate cost function with all covariates indicated by Snew, if less than B
+		if (c(Snew, ss)<=B)                  % evaluate cost function with all covariates indicated by Snew, if less than B
 			S = Snew;                       % define S = Snew
 			Ihat = find(S);                 % define Ihat = indices if S==1
             k = k + 1;                      % add one iteration/count to k
