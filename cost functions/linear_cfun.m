@@ -9,12 +9,12 @@ function [c] = linear_cfun(S, ss)
     % Output:  c = the cost function to be used
     
     % This cost function is of the following linear form: 
-    %               c(S, ss) = ss * sum(S) 
+    %               c(S, ss) = ss * (sum(S)+1) 
     % where ss is the number of observations and S is the
     % a vector of indices indicating what covariates of X should be
     % included (the price of each covariate has been normalized to
     % one). 
     
-    c = ss * sum(S);
+    c = ss * (sum(S)+1);
     
 end

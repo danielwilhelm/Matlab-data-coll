@@ -22,21 +22,11 @@ X = reshape(X, 100, 10);
 % We assume that the cost function takes the following linear form: 
 c = @linear_cfun;
 
-% We can also assume that the cost function takes "the general form" 
-d = @general_cfun;
-% for this cost function, we need to specify the following: 
-%M = 10;         % this cannot exceed length of S?!?!
-%tau = [1:M];
-%tau0 = 100;
-%phi = 1473;
-%alpha = 0.4;
-%ETA = 430;
+% Assume that the budget constraint is equal to the following
+B = 450;
 
-% Assume that the budget constraint is equal to 200
-B = 200;
-
-% Suppose we have three different sample sizes (they must be in ascending order)
-n = [40, 80, 100];
+% Suppose we have the following sample sizes
+n = [80, 123, 200, 197, 603];
 
 %% Using covSelection to get coefficients of covariates to include
 %  We now use the covSelection function with four input arguments (Y, X, c, B, n)
@@ -49,9 +39,17 @@ tic
 toc
 
 disp('The coefficients of the covariates to be included are:') 
-celldisp(coeff)
+disp(coeff)
 disp('The intercept of the regression is:')
-celldisp(intercept)
+disp(intercept)
 disp('The desired sample size is:')
-celldisp(ssize)
+disp(ssize)
 
+% Notes/Comments:  
+% covSelection also prints a table with the different sample sizes and the 
+% corresponding MSE, ratio of cost over budget, and the number of covariates 
+% to be inlcuded. The table only prints the sample sizes that select covariates. 
+% If zero covariates are selected, the sample size, MSE etc. are not included in the table. 
+% If the budget is specified in an unrealistic manner, it is possible that
+% covariates have a coefficient==Inf. covSelection was written in a way not
+% to include these cases (i.e. the table also does not print these). 

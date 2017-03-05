@@ -43,38 +43,58 @@ function [coeff, intercept, ssize] = covSelection(Y, X, c, B, n, varargin)
 	
 	coeff = zeros(size(X,2),1);                 % define coeff = vector of zeros with rows = # of columns of X
     
-    coeff1 = {};                                % placeholder for cell array below
-    coeff3 = {};                                % placeholder for cell array below
-    intercept1 = {};                            % placeholder for cell array below
-    sampsize = {};                              % placeholder for cell array below
+    MSE =[];                                    % placeholder
+    coeff2 =[];                                 % placeholder
+    sampsize =[];                               % placeholder
+    intercept1 =[];                             % placeholder
+    cost =[];                                   % placeholder
+    number =[];                                 % placeholder
     
     for i=1:length(n)                           % loop through the number of sample sizes suggested (n)
         ss = n(i);                              % for clarity, label the i'th sample size ss
         switch method
             case {'OGA'}                        % use orthogonal greedy algorithm (OGA) using general budget constraint
                 [Ihat, coeffS, intercept] = OGA(Y, X, c, B, ss, 'includeReg', includeReg, 'excludeReg', excludeReg);    % see OGA function for a precise description
+                coeff = zeros(size(X, 2), 1);   
                 coeff(Ihat) = coeffS;           % define coeff (at indices/covariates to be included) = coefficients from OGA algorithm
         end;
-        coeff2(:, i) = coeff;                   % store the resulting coefficients in the i'th cell of this matrix
-        coeff1{i} = coeff;                      % store the resulting coefficients in the i'th cell of this cell array
-        intercept1{i} = intercept;              % store the resulting intercepts in the i'th cell of this cell array
-        sampsize{i} = ss;                       % store the i'th sample size (ss) in the i'th column of this matrix
+        XS = [ones(size(X,1),1), X];            % include a constant into X matrix
+        betahat = [intercept; coeff];           % create a vector betahat that combines intercept and coefficients
+        yhat = XS*betahat;                      % calculate predicted outcome values using betahat
+        MSE1 = (1/ss)*mean((yhat - Y).^2);      % calculate mean squared error MSE
+        MSE(:,i) = MSE1;                        % store the MSE in a row vector 
+        coeff2(:,i) = coeff;                    % store the coefficients in the i'th column of this matrix
+        sampsize(:,i) = ss;                     % store the sample sizes in the i'th column of this matrix
+        intercept1(:,i) = intercept;            % store the intercepts in the i'th column of this matrix
+        cost(:,i) = c(sum(Ihat~=0), ss);        % store the associated cost in a matrix
+        number(:,i) = sum(Ihat~=0);             % store the associated number of covariates selected in a matrix
     end
-    for i = 1:size(coeff2, 2)                   % for each column of the coeff2 matrix
-        [~, ~, v] = find(coeff2(:, i));         % create a vector v with the non-zero elements of coeff2
-        coeff3{i} = {v};                        % store the resulting coefficients in the i'th cell of this cell array
-    end
-    x = cellfun('length',coeff3);               % create a (1xp) vector that counts the number of elements in the coeff1 array (so count which n gave how many coefficients)
-    % the row vector x contains a bunch of numbers each counting how many
-    % covariates each sample size chooses. The goal is to pick the largest,
-    % however, we must take into account that two sample sizes may pick the
-    % same number of covariates. In that case, we pick the larger of the
-    % two sample sizes (this is why the possible sample sizes have to be 
-    % in ascending order). 
-    maxval = max(x);                            % find the max value (number of coefficients) of x 
-    idx = find(x == maxval);                    % find all indices in x that correspond to this max value
-    ind = max(idx);                             % define ind as the index of x with the largest sample size and the most coefficients (covariates)
-    coeff=coeff1(ind);                          % define coeff as the coeff that are the max number of covariates for the given sample sizes
-    intercept = intercept1(ind);                % define the corresponding intercept
-    ssize = sampsize(ind);                      % define the corresponding sample size
+    
+    % take care of case where zero covariates are selected
+    columnsWithAllZeros = all(coeff2 == 0);             % find which column of coeff2 has no covariates selected
+    coeff2 = coeff2(:, ~columnsWithAllZeros);           % create a new coeff2 matrix without the column with all zeros (without the sample sizes that pick zero covariates)
+    intercept1 = intercept1(:, ~columnsWithAllZeros);   % adjust intercept matrix accordingly
+    sampsize = sampsize(:, ~columnsWithAllZeros);       % adjust sample size matrix accordingly
+    cost = cost(:, ~columnsWithAllZeros);               % adjust cost matrix accordingly
+    number = number(:, ~columnsWithAllZeros);           % adjust number of covariates matrix accordingly
+    MSE = MSE(:, ~columnsWithAllZeros);                 % adjust MSE vector accordingly
+    n = n(:, ~columnsWithAllZeros);                     % adjust sample size vector accordingly
+    
+    % take care of case where covariates with coefficients==Inf are selected
+    columnsWithAllZeros1 = all(coeff2 == Inf);           % find which column of coeff2 has coefficients==Inf
+    coeff2 = coeff2(:, ~columnsWithAllZeros1);           % create a new coeff2 matrix without the column with all zeros (without the sample sizes that pick zero covariates)
+    intercept1 = intercept1(:, ~columnsWithAllZeros1);   % adjust intercept matrix accordingly
+    sampsize = sampsize(:, ~columnsWithAllZeros1);       % adjust sample size matrix accordingly
+    cost = cost(:, ~columnsWithAllZeros1);               % adjust cost matrix accordingly
+    number = number(:, ~columnsWithAllZeros1);           % adjust number of covariates matrix accordingly
+    MSE = MSE(:, ~columnsWithAllZeros1);                 % adjust MSE vector accordingly
+    n = n(:, ~columnsWithAllZeros1);                     % adjust sample size vector accordingly
+
+    [~, ind] = min(MSE);                                % find the min MSE
+    coeff=coeff2(:,ind);                                % define coeff as the coeff that are the max number of covariates for the given sample sizes
+    intercept = intercept1(:,ind);                      % define the corresponding intercept
+    ssize = sampsize(:,ind);                            % define the corresponding sample size
+    
+    % plot the various sample sizes, the corresponding MSE, cost, and number of covariates selected in a table
+    table(n', MSE', cost'/B, number','VariableNames', {'SampleSize'; 'MSE'; 'CostoverBudget'; 'NumberCovariates'})
 end
