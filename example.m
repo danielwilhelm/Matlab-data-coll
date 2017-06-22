@@ -19,14 +19,16 @@ Y = randperm(1000000, 100)';
 X = randperm(1000000, 100*10);
 X = reshape(X, 100, 10);
 
-% We assume that the cost function takes the following linear form: 
-c = @linear_cfun;
+% We assume that the cost function takes one of the following forms: 
+%c = @linear_cfun;
+%c = @general_cfun;
+%c = @cluster_cfun;
 
 % Assume that the budget constraint is equal to the following
-B = 450;
+B = 113000;
 
 % Suppose we have the following sample sizes
-n = [80, 123, 200, 197, 603];
+n = [500, 1397, 1900, 3500, 6500];
 
 %% Using covSelection to get coefficients of covariates to include
 %  We now use the covSelection function with four input arguments (Y, X, c, B, n)
